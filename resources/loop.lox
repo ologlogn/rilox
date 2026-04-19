@@ -1,0 +1,14 @@
+var prev = 1;
+var n = 20;
+var current = 1;
+var i = 1;
+while(i <= n) {
+    print current;
+    var temp = current;
+    current = prev + current;
+    prev = temp;
+    i = i + 1;
+}
+print current;
+
+

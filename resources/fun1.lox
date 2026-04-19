@@ -1,0 +1,9 @@
+var x = 1;
+
+fun foo() {
+   var x = 99;  // assignment — walks up, mutates global x ✅
+   print x;
+}
+
+foo();
+print x;

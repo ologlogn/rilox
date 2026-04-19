@@ -1,0 +1,66 @@
+use crate::common::Value;
+use crate::error::Error;
+use crate::interpreter::env::{EnvRef, Environment};
+use crate::interpreter::interpreter::Interpreter;
+use crate::lexer::token::Token;
+use crate::parser::stmt::Statement;
+use std::cell::RefCell;
+use std::fmt::{Debug, Formatter};
+use std::rc::Rc;
+
+pub trait LoxCallable: Debug {
+    fn arity(&self) -> usize;
+    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Error>;
+}
+
+pub struct ClockFn;
+
+impl Debug for ClockFn {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "fn clock")
+    }
+}
+
+impl LoxCallable for ClockFn {
+    fn arity(&self) -> usize {
+        0
+    }
+
+    fn call(&self, _interpreter: &mut Interpreter, _args: Vec<Value>) -> Result<Value, Error> {
+        let time = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs_f64();
+        Ok(Value::Number(time))
+    }
+}
+
+pub struct LoxFunction {
+    pub(crate) params: Vec<Token>,
+    pub(crate) body: Vec<Statement>,
+    pub(crate) closure: EnvRef,
+}
+
+impl Debug for LoxFunction {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<fn>")
+    }
+}
+
+impl LoxCallable for LoxFunction {
+    fn arity(&self) -> usize {
+        self.params.len()
+    }
+
+    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Error> {
+        let call_env = Rc::new(RefCell::new(Environment::new(Some(self.closure.clone()))));
+        for (param, arg) in self.params.iter().zip(args) {
+            call_env.borrow_mut().define(param.lexeme.clone(), arg);
+        }
+        match interpreter.execute_block(&self.body, call_env) {
+            Ok(_) => Ok(Value::Nil),
+            Err(Error::Return(val)) => Ok(val),
+            Err(e) => Err(e),
+        }
+    }
+}

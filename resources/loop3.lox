@@ -1,0 +1,11 @@
+var init = clock();
+var a = 1;
+var b = 1;
+for (var i = 0; i < 40; i = i + 1) {
+  print a;
+  var temp = a + b;
+  a = b;
+  b = temp;
+}
+
+print clock() - init;
