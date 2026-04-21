@@ -1,4 +1,4 @@
-use crate::common::Value;
+use crate::interpreter::value::Value;
 use crate::lexer::token::Token;
 
 //Prints line with error message

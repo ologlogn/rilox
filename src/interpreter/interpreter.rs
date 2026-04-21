@@ -1,4 +1,4 @@
-use crate::common::{Value, is_equal, is_truthy};
+use crate::interpreter::value::{Value, is_equal, is_truthy};
 use crate::error::{Error, runtime_error};
 use crate::interpreter::env::{EnvRef, Environment};
 use crate::interpreter::function::{ClockFn, LoxFunction};

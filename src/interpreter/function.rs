@@ -1,4 +1,4 @@
-use crate::common::Value;
+use crate::interpreter::value::Value;
 use crate::error::Error;
 use crate::interpreter::env::{EnvRef, Environment};
 use crate::interpreter::interpreter::Interpreter;
