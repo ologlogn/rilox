@@ -193,6 +193,12 @@ impl Parser {
         loop {
             if self.match_any(&[TokenType::LeftParen]) {
                 expr = self.finish_call(expr)?
+            } else if self.match_any(&[TokenType::Dot]) {
+                let name = self.expect(&TokenType::Identifier)?;
+                expr = Expr::Get {
+                    object: Box::new(expr),
+                    name: name.clone(),
+                }
             } else {
                 break;
             }

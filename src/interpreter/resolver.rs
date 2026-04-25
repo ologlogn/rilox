@@ -184,6 +184,12 @@ impl Resolver {
             } => {
                 self.resolve_expr(right);
             }
+            Expr::Get {
+                object,
+                name: _name,
+            } => {
+                self.resolve_expr(object);
+            }
         }
     }
 

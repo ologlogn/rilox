@@ -4,6 +4,7 @@ use crate::interpreter::instance::LoxInstance;
 use crate::interpreter::interpreter::Interpreter;
 use crate::interpreter::value::Value;
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 
 #[derive(Clone, Debug)]
@@ -26,6 +27,7 @@ impl LoxCallable for LoxClass {
     fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Error> {
         let instance = LoxInstance {
             class: Rc::new(RefCell::new(self.clone())),
+            fields: HashMap::new(),
         };
         Ok(Value::Instance(Rc::new(RefCell::new(instance))))
     }

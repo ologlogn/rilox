@@ -276,6 +276,14 @@ impl Interpreter {
                     }
                 }
             }
+            Expr::Get {object, name} => {
+                let ob = self.eval_expr(object);
+                if let Value::Instance(instance) = ob {
+                    return instance.borrow().get(name);
+                }
+                runtime_error(name.clone(), "Not a function");
+                Value::Nil
+            }
         }
     }
 
