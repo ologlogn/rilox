@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::interpreter::function::LoxCallable;
+use crate::interpreter::function::{LoxCallable, LoxFunction};
 use crate::interpreter::instance::LoxInstance;
 use crate::interpreter::interpreter::Interpreter;
 use crate::interpreter::value::Value;
@@ -10,10 +10,17 @@ use std::rc::Rc;
 #[derive(Clone, Debug)]
 pub struct LoxClass {
     pub(crate) name: String,
+    pub(crate) methods: HashMap<String, Rc<RefCell<LoxFunction>>>,
 }
 impl LoxClass {
-    pub fn new(name: String) -> LoxClass {
-        LoxClass { name }
+    pub fn new(name: String, class_methods: HashMap<String, Rc<RefCell<LoxFunction>>>) -> LoxClass {
+        LoxClass {
+            name,
+            methods: class_methods,
+        }
+    }
+    pub fn find_method(&self, name: String) -> Option<Rc<RefCell<LoxFunction>>> {
+        self.methods.get(&name).cloned()
     }
     pub fn name(&self) -> String {
         self.name.clone()

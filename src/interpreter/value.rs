@@ -10,9 +10,9 @@ pub enum Value {
     Boolean(bool),
     String(String),
     Nil,
-    Callable(Rc<dyn LoxCallable>),
-    Class(Rc<RefCell<LoxClass>>),
-    Instance(Rc<RefCell<LoxInstance>>),
+    Callable(Rc<dyn LoxCallable>), // dyn because of trait
+    Class(Rc<LoxClass>), // immutable definition
+    Instance(Rc<RefCell<LoxInstance>>), // RefCell because mutable state
 }
 pub fn is_truthy(val: &Value) -> bool {
     match val {
@@ -31,7 +31,7 @@ impl std::fmt::Display for Value {
             Value::Boolean(b) => write!(f, "{}", b),
             Value::Nil => write!(f, "nil"),
             Value::Callable(_) => write!(f, "<fn>"),
-            Value::Class(class) => write!(f, "<class> {}", class.borrow().name()),
+            Value::Class(class) => write!(f, "<class> {}", class.name()),
             Value::Instance(instance) => write!(
                 f,
                 "<instance> of class {}",

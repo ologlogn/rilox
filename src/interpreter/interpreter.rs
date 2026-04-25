@@ -66,7 +66,7 @@ impl Interpreter {
             Statement::FunctionStmt(identifier, params, body, function_type) => {
                 let func = LoxFunction {
                     params: params.clone(),
-                    body: body.clone(), // Rc clone — same pointers
+                    body: body.clone(),
                     closure: self.env.clone(),
                 };
                 self.env
@@ -76,11 +76,24 @@ impl Interpreter {
             }
 
             Statement::ClassStmt(name, methods) => {
-                let class = LoxClass::new(name.lexeme.clone());
-                self.env.borrow_mut().define(
-                    name.lexeme.clone(),
-                    Value::Class(Rc::new(RefCell::new(class))),
-                );
+                let mut class_methods = HashMap::new();
+                for method in methods {
+                    if let Statement::FunctionStmt(method_name, params, body, function_type) =
+                        method
+                    {
+                        let function = LoxFunction {
+                            params: params.clone(),
+                            body: body.clone(),
+                            closure: self.env.clone(),
+                        };
+                        class_methods
+                            .insert(method_name.lexeme.clone(), Rc::new(RefCell::new(function)));
+                    }
+                }
+                let class = LoxClass::new(name.lexeme.clone(), class_methods);
+                self.env
+                    .borrow_mut()
+                    .define(name.lexeme.clone(), Value::Class(Rc::new(class)));
                 Ok(())
             }
 
@@ -264,11 +277,11 @@ impl Interpreter {
                         func.call(self, args).unwrap_or(Value::Nil)
                     }
                     Value::Class(class) => {
-                        if args.len() != class.borrow().arity() {
+                        if args.len() != class.arity() {
                             runtime_error(token.clone(), "Wrong number of arguments");
                             return Value::Nil;
                         }
-                        class.borrow().call(self, args).unwrap_or(Value::Nil)
+                        class.call(self, args).unwrap_or(Value::Nil)
                     }
                     _ => {
                         runtime_error(token.clone(), "Not a function");

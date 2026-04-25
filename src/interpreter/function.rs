@@ -35,6 +35,7 @@ impl LoxCallable for ClockFn {
     }
 }
 
+#[derive(Clone)]
 pub struct LoxFunction {
     pub(crate) params: Vec<Token>,
     pub(crate) body: Rc<Box<Statement>>,  // shared, never cloned
