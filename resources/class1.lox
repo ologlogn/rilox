@@ -1,0 +1,60 @@
+// 1. Basic Class (No init)
+class Person {
+  sayHi() {
+    print "Hi, my name is " + this.name + " and I am " + this.age + " years old.";
+  }
+
+  haveBirthday() {
+    this.age = this.age + 1;
+    print "Happy birthday! Now I am " + this.age + ".";
+  }
+}
+
+print "--- 1. Instantiation & Properties ---";
+var alice = Person(); // 0 arguments because no init!
+alice.name = "Alice";
+alice.age = 30;
+print alice.name; // Expected: Alice
+print alice.age;  // Expected: 30
+
+print "--- 2. Methods and `this` ---";
+alice.sayHi();    // Expected: Hi, my name is Alice and I am 30 years old.
+
+print "--- 3. Mutation via `this` ---";
+// This tests that your RefCell is shared properly
+alice.haveBirthday(); // Expected: Happy birthday! Now I am 31.
+alice.sayHi();        // Expected: Hi, my name is Alice and I am 31 years old.
+
+print "--- 4. Method Binding ---";
+// This tests your `bind` method and `get` returning Value::Callable
+var method = alice.sayHi; 
+method(); // Expected: Hi, my name is Alice and I am 31 years old.
+
+print "--- 5. Multiple Instances ---";
+// Tests that instances don't accidentally overwrite each other
+var bob = Person();
+bob.name = "Bob";
+bob.age = 25;
+bob.sayHi();   // Expected: Hi, my name is Bob and I am 25 years old.
+alice.sayHi(); // Expected: Hi, my name is Alice and I am 31 years old.
+
+print "--- 6. Closures capturing `this` ---";
+class Counter {
+  getClosure() {
+    fun increment() {
+      this.count = this.count + 1;
+      print this.count;
+    }
+    return increment;
+  }
+}
+
+var counter = Counter();
+counter.count = 0; // Initialize manually
+
+var inc = counter.getClosure();
+inc(); // Expected: 1
+inc(); // Expected: 2
+inc(); // Expected: 3
+print "Final count is: " + counter.count; // Expected: Final count is: 3
+

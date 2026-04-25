@@ -33,7 +33,7 @@ impl LoxCallable for LoxClass {
 
     fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Error> {
         let instance = LoxInstance {
-            class: Rc::new(RefCell::new(self.clone())),
+            class: Rc::new(self.clone()),
             fields: HashMap::new(),
         };
         Ok(Value::Instance(Rc::new(RefCell::new(instance))))

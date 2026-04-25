@@ -2,6 +2,7 @@ use crate::error::{Error, runtime_error};
 use crate::interpreter::class::LoxClass;
 use crate::interpreter::env::{EnvRef, Environment};
 use crate::interpreter::function::{ClockFn, LoxCallable, LoxFunction};
+use crate::interpreter::instance::LoxInstance;
 use crate::interpreter::value::{Value, is_equal, is_truthy};
 use crate::lexer::token::{Literal, TokenType};
 use crate::parser::expr::Expr;
@@ -292,7 +293,7 @@ impl Interpreter {
             Expr::Get { object, name } => {
                 let ob = self.eval_expr(object);
                 if let Value::Instance(instance) = ob {
-                    instance.borrow().get(name)
+                    LoxInstance::get(&instance, name)
                 } else {
                     runtime_error(name.clone(), "Not a instance");
                     Value::Nil
@@ -313,6 +314,7 @@ impl Interpreter {
                     Value::Nil
                 }
             }
+            Expr::This { token } => self.lookup(&token.lexeme, expr),
         }
     }
 

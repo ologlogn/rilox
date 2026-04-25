@@ -1,0 +1,68 @@
+// 1. Basic Class & Initialization
+class Person {
+  init(name, age) {
+    this.name = name;
+    this.age = age;
+    // init should automatically return `this` even without a return statement!
+  }
+
+  sayHi() {
+    print "Hi, my name is " + this.name + " and I am " + this.age + " years old.";
+  }
+
+  haveBirthday() {
+    this.age = this.age + 1;
+    print "Happy birthday! Now I am " + this.age + ".";
+  }
+}
+
+print "--- Testing Instantiation ---";
+var alice = Person("Alice", 30);
+print alice.name; // Expected: Alice
+print alice.age;  // Expected: 30
+alice.sayHi();    // Expected: Hi, my name is Alice and I am 30 years old.
+
+// 2. Testing Mutation (RefCell working correctly)
+print "--- Testing Mutation ---";
+alice.haveBirthday(); // Expected: Happy birthday! Now I am 31.
+alice.sayHi();        // Expected: Hi, my name is Alice and I am 31 years old.
+
+// 3. Testing Dynamic Properties
+print "--- Testing Dynamic Properties ---";
+alice.favoriteColor = "Blue";
+print "Alice's favorite color is " + alice.favoriteColor; // Expected: Alice's favorite color is Blue
+
+// 4. Testing Method Binding and First-Class Functions
+print "--- Testing Method Binding ---";
+var method = alice.sayHi; // Extracting the bound method
+method(); // Expected: Hi, my name is Alice and I am 31 years old.
+
+// 5. Testing Multiple Instances (Making sure they don't overwrite each other)
+print "--- Testing Multiple Instances ---";
+var bob = Person("Bob", 25);
+bob.sayHi();   // Expected: Hi, my name is Bob and I am 25 years old.
+alice.sayHi(); // Expected: Hi, my name is Alice and I am 31 years old.
+
+// 6. Testing `this` scope capture inside a closure
+class Counter {
+  init() {
+    this.count = 0;
+  }
+
+  getClosure() {
+    fun increment() {
+      this.count = this.count + 1;
+      print this.count;
+    }
+    return increment;
+  }
+}
+
+print "--- Testing Closures with 'this' ---";
+var counter = Counter();
+var inc = counter.getClosure();
+inc(); // Expected: 1
+inc(); // Expected: 2
+inc(); // Expected: 3
+print "Final count is: " + counter.count; // Expected: Final count is: 3
+

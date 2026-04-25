@@ -241,6 +241,10 @@ impl Parser {
             Ok(Expr::Grouping {
                 expr: Box::new(expr),
             })
+        } else if self.match_any(&[TokenType::This]) {
+            Ok(Expr::This {
+                token: self.previous().clone(),
+            })
         } else if self.match_any(&[TokenType::Identifier]) {
             Ok(Expr::Variable(self.previous().clone()))
         } else {

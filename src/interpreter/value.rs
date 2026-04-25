@@ -35,7 +35,7 @@ impl std::fmt::Display for Value {
             Value::Instance(instance) => write!(
                 f,
                 "<instance> of class {}",
-                instance.borrow().class.borrow().name()
+                instance.borrow().class.name()
             ),
         }
     }

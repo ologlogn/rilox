@@ -70,9 +70,15 @@ impl Resolver {
             Statement::ClassStmt(name, methods) => {
                 self.declare(name);
                 self.define(name);
+                self.begin_scope();
+                self.scopes
+                    .last_mut()
+                    .unwrap()
+                    .push(("this".to_string(), true)); // add "this" variable
                 for method in methods {
                     self.resolve_statement(method);
                 }
+                self.end_scope();
             }
         }
     }
@@ -197,6 +203,9 @@ impl Resolver {
             } => {
                 self.resolve_expr(object);
                 self.resolve_expr(value);
+            }
+            Expr::This { token } => {
+                self.resolve_local(expr, token);
             }
         }
     }

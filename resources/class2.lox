@@ -1,0 +1,69 @@
+// 1. Basic Class (No init)
+class Person {
+  sayHi() {
+    // Only concatenating strings together
+    print "Hi, my name is " + this.name + ".";
+    print "I am this many years old:";
+    print this.age; // Printing the number directly
+  }
+
+  haveBirthday() {
+    this.age = this.age + 1; // Only adding numbers together
+    print "Happy birthday! New age:";
+    print this.age;
+  }
+}
+
+print "--- 1. Instantiation & Properties ---";
+var alice = Person(); // 0 arguments because no init!
+alice.name = "Alice";
+alice.age = 30; // Still a Number!
+print alice.name; // Expected: Alice
+print alice.age;  // Expected: 30
+
+print "--- 2. Methods and `this` ---";
+alice.sayHi();    
+// Expected: 
+// Hi, my name is Alice.
+// I am this many years old:
+// 30
+
+print "--- 3. Mutation via `this` ---";
+alice.haveBirthday(); 
+// Expected: 
+// Happy birthday! New age:
+// 31
+alice.sayHi();        
+
+print "--- 4. Method Binding ---";
+var method = alice.sayHi; 
+method(); 
+
+print "--- 5. Multiple Instances ---";
+var bob = Person();
+bob.name = "Bob";
+bob.age = 25;
+bob.sayHi();   
+alice.sayHi(); 
+
+print "--- 6. Closures capturing `this` ---";
+class Counter {
+  getClosure() {
+    fun increment() {
+      this.count = this.count + 1;
+      print this.count;
+    }
+    return increment;
+  }
+}
+
+var counter = Counter();
+counter.count = 0; 
+
+var inc = counter.getClosure();
+inc(); // Expected: 1
+inc(); // Expected: 2
+inc(); // Expected: 3
+print "Final count:"; 
+print counter.count; // Expected: 3
+

@@ -7,6 +7,7 @@ use crate::parser::stmt::Statement;
 use std::cell::RefCell;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
+use crate::interpreter::instance::LoxInstance;
 
 pub trait LoxCallable: Debug {
     fn arity(&self) -> usize;
@@ -48,6 +49,18 @@ impl Debug for LoxFunction {
     }
 }
 
+impl LoxFunction {
+    pub fn bind(&self, instance: Rc<RefCell<LoxInstance>>) -> Value {
+        let mut env = Environment::new(Some(self.closure.clone()));
+        env.define("this".to_string(), Value::Instance(instance));
+        let bound_function = LoxFunction {
+            params: self.params.clone(),
+            body: Rc::clone(&self.body),
+            closure: Rc::new(RefCell::new(env)),
+        };
+        Value::Callable(Rc::new(bound_function))
+    }
+}
 impl LoxCallable for LoxFunction {
     fn arity(&self) -> usize {
         self.params.len()

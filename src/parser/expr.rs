@@ -39,5 +39,6 @@ pub enum Expr {
         object: Box<Expr>,
         name: Token,
         value: Box<Expr>,
-    }
+    },
+    This {token: Token}
 }
