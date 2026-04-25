@@ -1,6 +1,8 @@
+use crate::interpreter::class::LoxClass;
 use crate::interpreter::function::LoxCallable;
+use crate::interpreter::instance::LoxInstance;
+use std::cell::RefCell;
 use std::rc::Rc;
-
 
 #[derive(Clone, Debug)]
 pub enum Value {
@@ -9,6 +11,8 @@ pub enum Value {
     String(String),
     Nil,
     Callable(Rc<dyn LoxCallable>),
+    Class(Rc<RefCell<LoxClass>>),
+    Instance(Rc<RefCell<LoxInstance>>),
 }
 pub fn is_truthy(val: &Value) -> bool {
     match val {
@@ -26,7 +30,13 @@ impl std::fmt::Display for Value {
             Value::Number(n) => write!(f, "{}", n),
             Value::Boolean(b) => write!(f, "{}", b),
             Value::Nil => write!(f, "nil"),
-            Value::Callable(_) => write!(f, "<fn>"), // or whatever you want to display for functions
+            Value::Callable(_) => write!(f, "<fn>"),
+            Value::Class(class) => write!(f, "<class> {}", class.borrow().name()),
+            Value::Instance(instance) => write!(
+                f,
+                "<instance> of class {}",
+                instance.borrow().class.borrow().name()
+            ),
         }
     }
 }

@@ -2,6 +2,12 @@ use std::rc::Rc;
 use crate::lexer::token::{Token};
 use crate::parser::expr::Expr;
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum FunctionType {
+    NONE,
+    FUNCTION,
+    METHOD,
+}
 #[derive(Debug, Clone)]
 pub enum Statement {
     ExpressionStmt(Expr),
@@ -10,6 +16,7 @@ pub enum Statement {
     BlockStmt(Vec<Statement>),
     IfStmt(Expr, Box<Statement>, Option<Box<Statement>>),
     WhileStmt(Expr, Box<Statement>),
-    FunctionStmt(Token, Vec<Token>, Rc<Box<Statement>>),
+    FunctionStmt(Token, Vec<Token>, Rc<Box<Statement>>, FunctionType),
     ReturnStmt(Token, Option<Expr>),
+    ClassStmt(Token, Vec<Statement>), // name, methods
 }

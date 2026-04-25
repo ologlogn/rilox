@@ -1,14 +1,8 @@
 use crate::lexer::token::Token;
 use crate::parser::expr::Expr;
-use crate::parser::stmt::Statement;
+use crate::parser::stmt::{FunctionType, Statement};
 use std::collections::HashMap;
 use std::rc::Rc;
-
-#[derive(Clone, Debug, PartialEq)]
-enum FunctionType {
-    NONE,
-    FUNCTION,
-}
 
 pub struct Resolver {
     scopes: Vec<Vec<(String, bool)>>,
@@ -41,10 +35,10 @@ impl Resolver {
                 }
                 self.define(name);
             }
-            Statement::FunctionStmt(identifier, params, body) => {
+            Statement::FunctionStmt(identifier, params, body, function_type) => {
                 self.declare(identifier);
                 self.define(identifier);
-                self.resolve_function(params, body, FunctionType::FUNCTION);
+                self.resolve_function(params, body, function_type.clone());
             }
             Statement::ExpressionStmt(expr) => {
                 self.resolve_expr(expr);
@@ -72,6 +66,13 @@ impl Resolver {
             Statement::WhileStmt(condition, body) => {
                 self.resolve_expr(condition);
                 self.resolve_statement(body);
+            }
+            Statement::ClassStmt(name, methods) => {
+                self.declare(name);
+                self.define(name);
+                for method in methods {
+                    self.resolve_statement(method);
+                }
             }
         }
     }

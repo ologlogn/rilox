@@ -1,0 +1,49 @@
+// --- Closure-Based Linked List ---
+fun Node(val, next) {
+  fun closure(return_val) {
+    if (return_val) return val;
+    return next;
+  }
+  return closure;
+}
+
+fun head(node) { return node(true); }
+fun tail(node) { return node(false); }
+
+// --- Build a list of 1000 numbers: 1, 2, 3, ..., 1000 ---
+// We build it in reverse (1000 down to 1) so the list reads 1 -> 2 -> ... -> 1000
+// Target: 1000
+// Pair found: 499 + 501 = 1000
+
+var nums = nil;
+var i = 1000;
+while (i >= 1) {
+  nums = Node(i, nums);
+  i = i - 1;
+}
+
+var target = 1000;
+print "Looking for two numbers that sum to 1000 in a 1000-element list...";
+
+var found = false;
+var iNode = nums;
+while (iNode != nil) {
+  var jNode = tail(iNode);
+  while (jNode != nil) {
+    var vi = head(iNode);
+    var vj = head(jNode);
+    if (vi + vj == target) {
+//      if (!found) { // Only print the first match to avoid spam
+        print "--- Pair Found! ---";
+        print vi;
+        print vj;
+        found = true;
+ //     }
+    }
+    jNode = tail(jNode);
+  }
+  iNode = tail(iNode);
+}
+
+print "Done!";
+

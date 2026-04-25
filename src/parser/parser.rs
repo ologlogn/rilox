@@ -1,7 +1,7 @@
-use std::rc::Rc;
 use crate::lexer::token::{Literal, Token, TokenType};
 use crate::parser::expr::Expr;
-use crate::parser::stmt::Statement;
+use crate::parser::stmt::{FunctionType, Statement};
+use std::rc::Rc;
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -366,12 +366,25 @@ impl Parser {
         if self.match_any(&[TokenType::Var]) {
             self.var_declaration()
         } else if self.match_any(&[TokenType::Fun]) {
-            self.function()
+            self.function(FunctionType::FUNCTION)
+        } else if self.match_any(&[TokenType::Class]) {
+            self.class_declaration()
         } else {
             self.statement()
         }
     }
-    fn function(&mut self) -> Result<Statement, ParseError> {
+    fn class_declaration(&mut self) -> Result<Statement, ParseError> {
+        let name = self.expect(&TokenType::Identifier)?.clone();
+        self.match_any(&[TokenType::LeftBrace]);
+        let mut methods = Vec::new();
+        while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
+            methods.push(self.function(FunctionType::METHOD)?);
+        }
+        self.expect(&TokenType::RightBrace)?;
+        Ok(Statement::ClassStmt(name, methods))
+    }
+
+    fn function(&mut self, function_type: FunctionType) -> Result<Statement, ParseError> {
         let name = self.expect(&TokenType::Identifier)?.clone();
         self.expect(&TokenType::LeftParen)?;
         let mut params: Vec<Token> = vec![];
@@ -384,7 +397,12 @@ impl Parser {
         self.expect(&TokenType::RightParen)?;
         self.expect(&TokenType::LeftBrace)?;
         let body = self.block_statement()?;
-        Ok(Statement::FunctionStmt(name, params, Rc::new(Box::new(body))))
+        Ok(Statement::FunctionStmt(
+            name,
+            params,
+            Rc::new(Box::new(body)),
+            function_type,
+        ))
     }
     fn var_declaration(&mut self) -> Result<Statement, ParseError> {
         let name = self.expect(&TokenType::Identifier)?.clone();

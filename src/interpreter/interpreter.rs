@@ -1,7 +1,8 @@
-use crate::interpreter::value::{Value, is_equal, is_truthy};
 use crate::error::{Error, runtime_error};
+use crate::interpreter::class::LoxClass;
 use crate::interpreter::env::{EnvRef, Environment};
-use crate::interpreter::function::{ClockFn, LoxFunction};
+use crate::interpreter::function::{ClockFn, LoxCallable, LoxFunction};
+use crate::interpreter::value::{Value, is_equal, is_truthy};
 use crate::lexer::token::{Literal, TokenType};
 use crate::parser::expr::Expr;
 use crate::parser::stmt::Statement;
@@ -13,7 +14,7 @@ pub struct Interpreter {
     pub(crate) globals: EnvRef,
     pub(crate) env: EnvRef,
     pub(crate) had_error: bool,
-    pub(crate) locals: HashMap<*const Expr, (usize,usize) >,
+    pub(crate) locals: HashMap<*const Expr, (usize, usize)>,
 }
 
 impl Interpreter {
@@ -62,13 +63,24 @@ impl Interpreter {
                 Ok(())
             }
 
-            Statement::FunctionStmt(identifier, params, body) => {
+            Statement::FunctionStmt(identifier, params, body, function_type) => {
                 let func = LoxFunction {
                     params: params.clone(),
                     body: body.clone(), // Rc clone — same pointers
                     closure: self.env.clone(),
                 };
-                self.env.borrow_mut().define(identifier.lexeme.clone(), Value::Callable(Rc::new(func)));
+                self.env
+                    .borrow_mut()
+                    .define(identifier.lexeme.clone(), Value::Callable(Rc::new(func)));
+                Ok(())
+            }
+
+            Statement::ClassStmt(name, methods) => {
+                let class = LoxClass::new(name.lexeme.clone());
+                self.env.borrow_mut().define(
+                    name.lexeme.clone(),
+                    Value::Class(Rc::new(RefCell::new(class))),
+                );
                 Ok(())
             }
 
@@ -94,7 +106,11 @@ impl Interpreter {
         self.env = previous;
         result
     }
-    pub(crate) fn execute_stmt_block(&mut self, stmt: &Statement, new_env: EnvRef) -> Result<(), Error> {
+    pub(crate) fn execute_stmt_block(
+        &mut self,
+        stmt: &Statement,
+        new_env: EnvRef,
+    ) -> Result<(), Error> {
         if let Statement::BlockStmt(stmts) = stmt {
             self.execute_block(stmts, new_env)
         } else {
@@ -206,7 +222,9 @@ impl Interpreter {
                 if let Some(&(distance, index)) = self.locals.get(&key) {
                     Environment::assign_at(self.env.clone(), distance, index, val.clone());
                 } else {
-                    self.globals.borrow_mut().assign(name.lexeme.clone(), val.clone());
+                    self.globals
+                        .borrow_mut()
+                        .assign(name.lexeme.clone(), val.clone());
                 }
                 val
             }
@@ -236,21 +254,30 @@ impl Interpreter {
                 let callee_val = self.eval_expr(callee);
                 let args: Vec<Value> = args.iter().map(|arg| self.eval_expr(arg)).collect();
 
-                if let Value::Callable(func) = callee_val {
-                    let func = func.clone();
-                    if args.len() != func.arity() {
-                        runtime_error(token.clone(), "Wrong number of arguments");
-                        return Value::Nil;
+                match callee_val {
+                    Value::Callable(func) => {
+                        let func = func.clone();
+                        if args.len() != func.arity() {
+                            runtime_error(token.clone(), "Wrong number of arguments");
+                            return Value::Nil;
+                        }
+                        func.call(self, args).unwrap_or(Value::Nil)
                     }
-                    func.call(self, args).unwrap_or(Value::Nil)
-                } else {
-                    runtime_error(token.clone(), "Not a function");
-                    Value::Nil
+                    Value::Class(class) => {
+                        if args.len() != class.borrow().arity() {
+                            runtime_error(token.clone(), "Wrong number of arguments");
+                            return Value::Nil;
+                        }
+                        class.borrow().call(self, args).unwrap_or(Value::Nil)
+                    }
+                    _ => {
+                        runtime_error(token.clone(), "Not a function");
+                        Value::Nil
+                    }
                 }
             }
         }
     }
-
 
     pub(crate) fn lookup(&self, name: &str, expr: &Expr) -> Value {
         let key = expr as *const Expr;
