@@ -28,7 +28,6 @@ pub enum Expr {
     },
     Call {
         callee: Box<Expr>,
-        token: Token,
         args: Vec<Expr>,
     },
     Get {

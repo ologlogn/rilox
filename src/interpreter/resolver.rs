@@ -207,7 +207,6 @@ impl Resolver {
             }
             Expr::Call {
                 callee,
-                token: _token,
                 args,
             } => {
                 self.resolve_expr(callee);

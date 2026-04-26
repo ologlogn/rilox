@@ -219,10 +219,9 @@ impl Parser {
                 args.push(self.expression()?);
             }
         }
-        let token = self.expect(&TokenType::RightParen)?;
+        self.expect(&TokenType::RightParen)?;
         Ok(Expr::Call {
             callee: Box::from(callee),
-            token: token.clone(),
             args,
         })
     }
