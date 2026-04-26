@@ -382,7 +382,8 @@ impl Parser {
         if self.match_any(&[TokenType::Var]) {
             self.var_declaration()
         } else if self.match_any(&[TokenType::Fun]) {
-            self.function(FunctionType::FUNCTION)
+            let name = self.expect(&TokenType::Identifier)?.clone();
+            self.function(name, FunctionType::FUNCTION)
         } else if self.match_any(&[TokenType::Class]) {
             self.class_declaration()
         } else {
@@ -394,14 +395,22 @@ impl Parser {
         self.match_any(&[TokenType::LeftBrace]);
         let mut methods = Vec::new();
         while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
-            methods.push(self.function(FunctionType::METHOD)?);
+            let name = self.expect(&TokenType::Identifier)?.clone();
+            if name.lexeme.to_lowercase() == "init" {
+                methods.push(self.function(name, FunctionType::INIT)?);
+            } else {
+                methods.push(self.function(name, FunctionType::METHOD)?);
+            }
         }
         self.expect(&TokenType::RightBrace)?;
         Ok(Statement::ClassStmt(name, methods))
     }
 
-    fn function(&mut self, function_type: FunctionType) -> Result<Statement, ParseError> {
-        let name = self.expect(&TokenType::Identifier)?.clone();
+    fn function(
+        &mut self,
+        name: Token,
+        function_type: FunctionType,
+    ) -> Result<Statement, ParseError> {
         self.expect(&TokenType::LeftParen)?;
         let mut params: Vec<Token> = vec![];
         if !self.check(&TokenType::RightParen) {

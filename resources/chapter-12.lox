@@ -1,0 +1,116 @@
+// ---------------------------------------------------------
+// Scenario 1: Basic 'init' and explicit early return
+// Tests if `init` implicitly returns `this`, and if 
+// an explicit `return;` also correctly returns `this`.
+// ---------------------------------------------------------
+class Person {
+  init(name, early) {
+    this.name = name;
+    if (early) {
+      return; // MUST return the instance, not 'nil'
+    }
+    this.name = name + " Smith";
+  }
+}
+
+var p1 = Person("John", false);
+print p1.name; // expect: John Smith
+
+var p2 = Person("Jane", true);
+print p2.name; // expect: Jane
+
+
+// ---------------------------------------------------------
+// Scenario 2: Method Chaining
+// Tests if methods can explicitly return `this` 
+// to allow sequential method calls.
+// ---------------------------------------------------------
+class Builder {
+  init() {
+    this.value = 0;
+  }
+  add(n) {
+    this.value = this.value + n;
+    return this; // Explicitly returning this
+  }
+}
+
+var b = Builder().add(5).add(10);
+print b.value; // expect: 15
+
+
+// ---------------------------------------------------------
+// Scenario 3: Bound Methods and Closures
+// Tests if `this` is properly captured in a closure environment.
+// If your `bind()` or `Environment` is broken, `this` will be lost.
+// ---------------------------------------------------------
+class Counter {
+  init() {
+    this.count = 0;
+  }
+
+  getClosure() {
+    // A local function inside a method that uses 'this'
+    fun increment() {
+      this.count = this.count + 1;
+      return this.count;
+    }
+    return increment;
+  }
+}
+
+var counter = Counter();
+var inc = counter.getClosure(); // extract the closure
+print inc(); // expect: 1
+print inc(); // expect: 2
+print counter.count; // expect: 2
+
+
+// ---------------------------------------------------------
+// Scenario 4: Deeply Nested Resolver Tracks
+// Tests if the resolver correctly tracks the distance of 'this'
+// across multiple nested local scopes.
+// ---------------------------------------------------------
+class Nested {
+  init(val) {
+    this.val = val;
+  }
+  
+  test() {
+    fun inner1() {
+      fun inner2() {
+        fun inner3() {
+          // Resolver must calculate a distance of 3 hops to find 'this'
+          return this.val; 
+        }
+        return inner3();
+      }
+      return inner2();
+    }
+    return inner1();
+  }
+}
+
+var n = Nested("deeply_nested_this");
+print n.test(); // expect: deeply_nested_this
+
+
+// ---------------------------------------------------------
+// Scenario 5: Storing unbound/bound methods
+// Tests grabbing a method directly from an instance and 
+// passing it around like a variable.
+// ---------------------------------------------------------
+class Greeter {
+  init(greeting) {
+    this.greeting = greeting;
+  }
+  
+  greet(name) {
+    print this.greeting + ", " + name;
+  }
+}
+
+var greeter = Greeter("Hello");
+var sayHello = greeter.greet; // Extract bound method
+sayHello("World"); // expect: Hello, World
+

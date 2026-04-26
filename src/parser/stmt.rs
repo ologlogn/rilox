@@ -7,6 +7,13 @@ pub enum FunctionType {
     NONE,
     FUNCTION,
     METHOD,
+    INIT,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ClassType {
+    NONE,
+    CLASS,
 }
 #[derive(Debug, Clone)]
 pub enum Statement {

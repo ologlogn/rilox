@@ -69,6 +69,7 @@ impl Interpreter {
                     params: params.clone(),
                     body: body.clone(),
                     closure: self.env.clone(),
+                    function_type: function_type.clone(),
                 };
                 self.env
                     .borrow_mut()
@@ -86,6 +87,7 @@ impl Interpreter {
                             params: params.clone(),
                             body: body.clone(),
                             closure: self.env.clone(),
+                            function_type: function_type.clone(),
                         };
                         class_methods
                             .insert(method_name.lexeme.clone(), Rc::new(RefCell::new(function)));
@@ -187,6 +189,10 @@ impl Interpreter {
                         if let (Value::Number(l), Value::Number(r)) = (left, right) {
                             Value::Number(l + r)
                         } else if let (Value::String(l), Value::String(r)) = (left, right) {
+                            Value::String(format!("{}{}", l, r))
+                        } else if let (Value::Number(l), Value::String(r)) = (left, right) {
+                            Value::String(format!("{}{}", l, r))
+                        } else if let (Value::String(l), Value::Number(r)) = (left, right) {
                             Value::String(format!("{}{}", l, r))
                         } else {
                             runtime_error(

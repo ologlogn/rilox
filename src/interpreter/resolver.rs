@@ -1,6 +1,6 @@
 use crate::lexer::token::Token;
 use crate::parser::expr::Expr;
-use crate::parser::stmt::{FunctionType, Statement};
+use crate::parser::stmt::{ClassType, FunctionType, Statement};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -9,6 +9,7 @@ pub struct Resolver {
     pub locals: HashMap<*const Expr, (usize, usize)>, // distance and index
     current_function: FunctionType,
     pub had_error: bool,
+    current_class: ClassType,
 }
 impl Resolver {
     pub fn new() -> Self {
@@ -16,6 +17,7 @@ impl Resolver {
             scopes: Vec::new(),
             locals: HashMap::new(),
             current_function: FunctionType::NONE,
+            current_class: ClassType::NONE,
             had_error: false,
         }
     }
@@ -53,13 +55,18 @@ impl Resolver {
             Statement::PrintStmt(expr) => {
                 self.resolve_expr(expr);
             }
-            Statement::ReturnStmt(_, expr) => {
+            Statement::ReturnStmt(token, expr) => {
                 if self.current_function == FunctionType::NONE {
                     eprintln!("return used without function");
                     self.had_error = true;
                     return;
                 }
                 if let Some(e) = expr {
+                    if self.current_function == FunctionType::INIT {
+                        eprintln!("Can't return value from init at line {}", token.line);
+                        self.had_error = true;
+                        return;
+                    }
                     self.resolve_expr(e)
                 }
             }
@@ -68,6 +75,8 @@ impl Resolver {
                 self.resolve_statement(body);
             }
             Statement::ClassStmt(name, methods) => {
+                let enclosing_class = self.current_class.clone();
+                self.current_class = ClassType::CLASS;
                 self.declare(name);
                 self.define(name);
                 self.begin_scope();
@@ -79,6 +88,7 @@ impl Resolver {
                     self.resolve_statement(method);
                 }
                 self.end_scope();
+                self.current_class = enclosing_class;
             }
         }
     }
@@ -205,6 +215,11 @@ impl Resolver {
                 self.resolve_expr(value);
             }
             Expr::This { token } => {
+                if self.current_class == ClassType::NONE {
+                    eprintln!("Can't use 'this' outside of a class");
+                    self.had_error = true;
+                    return;
+                }
                 self.resolve_local(expr, token);
             }
         }

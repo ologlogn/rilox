@@ -1,13 +1,13 @@
-use crate::interpreter::value::Value;
 use crate::error::Error;
 use crate::interpreter::env::{EnvRef, Environment};
+use crate::interpreter::instance::LoxInstance;
 use crate::interpreter::interpreter::Interpreter;
+use crate::interpreter::value::Value;
 use crate::lexer::token::Token;
-use crate::parser::stmt::Statement;
+use crate::parser::stmt::{FunctionType, Statement};
 use std::cell::RefCell;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
-use crate::interpreter::instance::LoxInstance;
 
 pub trait LoxCallable: Debug {
     fn arity(&self) -> usize;
@@ -39,8 +39,9 @@ impl LoxCallable for ClockFn {
 #[derive(Clone)]
 pub struct LoxFunction {
     pub(crate) params: Vec<Token>,
-    pub(crate) body: Rc<Box<Statement>>,  // shared, never cloned
+    pub(crate) body: Rc<Box<Statement>>, // shared, never cloned
     pub(crate) closure: EnvRef,
+    pub(crate) function_type: FunctionType,
 }
 
 impl Debug for LoxFunction {
@@ -57,6 +58,7 @@ impl LoxFunction {
             params: self.params.clone(),
             body: Rc::clone(&self.body),
             closure: Rc::new(RefCell::new(env)),
+            function_type: self.function_type.clone(),
         };
         Value::Callable(Rc::new(bound_function))
     }
@@ -72,8 +74,18 @@ impl LoxCallable for LoxFunction {
             call_env.borrow_mut().define(param.lexeme.clone(), arg);
         }
         match interpreter.execute_stmt_block(&self.body, call_env) {
-            Ok(_) => Ok(Value::Nil),
-            Err(Error::Return(val)) => Ok(val),
+            Ok(_) => {
+                if self.function_type == FunctionType::INIT {
+                    return Ok(Environment::get_at(self.closure.clone(), 0, 0));
+                }
+                Ok(Value::Nil)
+            }
+            Err(Error::Return(val)) => {
+                if self.function_type == FunctionType::INIT {
+                    return Ok(Environment::get_at(self.closure.clone(), 0, 0));
+                }
+                Ok(val)
+            }
             Err(e) => Err(e),
         }
     }

@@ -28,14 +28,26 @@ impl LoxClass {
 }
 impl LoxCallable for LoxClass {
     fn arity(&self) -> usize {
-        0
+        let initializer = self.find_method("init".to_string());
+        if let Some(init) = initializer {
+            init.borrow().arity()
+        } else {
+            0
+        }
     }
 
     fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Error> {
-        let instance = LoxInstance {
+        let instance = Rc::new(RefCell::new(LoxInstance {
             class: Rc::new(self.clone()),
             fields: HashMap::new(),
-        };
-        Ok(Value::Instance(Rc::new(RefCell::new(instance))))
+        }));
+
+        if let Some(initializer) = self.find_method("init".to_string()) {
+            let bound_value = initializer.borrow().bind(instance.clone());
+            if let Value::Callable(bound_init) = bound_value {
+                bound_init.call(interpreter, args)?;
+            }
+        }
+        Ok(Value::Instance(instance))
     }
 }

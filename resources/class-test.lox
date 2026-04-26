@@ -1,0 +1,135 @@
+// ==========================================
+// PART 1: Functional Linked List
+// Tests: Object references, higher-order functions, 
+//        passing functions as arguments, recursion.
+// ==========================================
+class List {
+  init(value, next) {
+    this.value = value;
+    this.next = next;
+  }
+
+  // Recursively maps a function over the list and returns a new List
+  map(transform) {
+    var mappedNext = nil;
+    if (this.next != nil) {
+      mappedNext = this.next.map(transform);
+    }
+    return List(transform(this.value), mappedNext);
+  }
+
+  // Recursively reduces the list into a single value
+  reduce(initial, combiner) {
+    var result = combiner(initial, this.value);
+    if (this.next != nil) {
+      return this.next.reduce(result, combiner);
+    }
+    return result;
+  }
+}
+
+// Create list: 1 -> 2 -> 3 -> nil
+var list = List(1, List(2, List(3, nil)));
+
+fun square(n) { return n * n; }
+fun sum(a, b) { return a + b; }
+
+var squaredList = list.map(square);
+var total = squaredList.reduce(0, sum);
+
+print "--- Part 1: Linked List ---";
+print "Total sum of squares (1+4+9):";
+print total; // expect: 14
+
+
+// ==========================================
+// PART 2: Closure-Based ATM
+// Tests: Closures capturing 'this' across multiple 
+//        instances without bleeding state.
+// ==========================================
+class BankAccount {
+  init(owner, balance) {
+    this.owner = owner;
+    this.balance = balance;
+  }
+
+  deposit(amount) {
+    this.balance = this.balance + amount;
+    return this.balance;
+  }
+
+  withdraw(amount) {
+    if (amount > this.balance) {
+      print "Insufficient funds for " + this.owner;
+      return false;
+    }
+    this.balance = this.balance - amount;
+    return true;
+  }
+
+  // Returns a closure that remembers the specific method on 'this'
+  getAtmClosure() {
+    fun atm(action, amount) {
+      if (action == "deposit") {
+        return this.deposit(amount);
+      }
+      if (action == "withdraw") {
+        return this.withdraw(amount);
+      }
+      return this.balance;
+    }
+    return atm; // returning the function
+  }
+}
+
+var alice = BankAccount("Alice", 100);
+var bob = BankAccount("Bob", 50);
+
+// Extract closures that secretly hold 'this' bindings to different objects
+var aliceAtm = alice.getAtmClosure();
+var bobAtm = bob.getAtmClosure();
+
+print "--- Part 2: Bank ATM ---";
+aliceAtm("deposit", 50);
+bobAtm("withdraw", 20);
+aliceAtm("withdraw", 200); // expect: Insufficient funds for Alice
+
+print "Alice Balance:";
+print aliceAtm("balance", 0); // expect: 150
+print "Bob Balance:";
+print bobAtm("balance", 0); // expect: 30
+
+
+// ==========================================
+// PART 3: Mutually Recursive State Machine
+// Tests: Method calls across 'this' bindings and 
+//        deep call stacks with object state.
+// ==========================================
+class PingPong {
+  init(max) {
+    this.max = max;
+    this.count = 0;
+  }
+
+  ping() {
+    if (this.count < this.max) {
+      this.count = this.count + 1;
+      return this.pong(); // recursive cross-call
+    }
+    return "Done";
+  }
+
+  pong() {
+    if (this.count < this.max) {
+      this.count = this.count + 1;
+      return this.ping(); // recursive cross-call
+    }
+    return "Done";
+  }
+}
+
+var game = PingPong(6);
+print "--- Part 3: Ping Pong ---";
+print game.ping(); // expect: Done
+print game.count;  // expect: 6
+
