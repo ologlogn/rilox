@@ -14,6 +14,7 @@ pub enum FunctionType {
 pub enum ClassType {
     NONE,
     CLASS,
+    SUBCLASS,
 }
 #[derive(Debug, Clone)]
 pub enum Statement {
@@ -25,5 +26,5 @@ pub enum Statement {
     WhileStmt(Expr, Box<Statement>),
     FunctionStmt(Token, Vec<Token>, Rc<Box<Statement>>, FunctionType),
     ReturnStmt(Token, Option<Expr>),
-    ClassStmt(Token, Vec<Statement>), // name, methods
+    ClassStmt(Token, Vec<Statement>, Option<Expr>), // name, methods, superclass
 }

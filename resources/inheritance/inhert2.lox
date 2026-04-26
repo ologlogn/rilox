@@ -1,0 +1,68 @@
+class A {
+  init() {
+    this.value = "A";
+  }
+
+  identify() {
+    return "I am " + this.value;
+  }
+
+  mutate() {
+    this.value = this.value + " (mutated by A)";
+  }
+}
+
+class B < A {
+  identify() {
+    return super.identify() + ", wrapped in B";
+  }
+}
+
+class C < B {
+  init() {
+    super.init(); // Initialize A's state
+    this.value = this.value + " and C";
+  }
+
+  // Returns a closure that captures `super` and `this`
+  getSuperClosure() {
+    fun closure() {
+      // super.identify() here should resolve to B's identify
+      return super.identify();
+    }
+    return closure;
+  }
+}
+
+class D < C {
+  mutate() {
+    // Call the grand-parent's mutate method via inherited C
+    super.mutate();
+    this.value = this.value + " [D touched this]";
+  }
+}
+
+print "--- Test 1: Deep Inheritance & State ---";
+var d = D();
+// Should print: I am A and C, wrapped in B
+print d.identify(); 
+
+print "--- Test 2: Mutation via Super ---";
+d.mutate();
+// Should print: I am A and C (mutated by A) [D touched this], wrapped in B
+print d.identify();
+
+print "--- Test 3: Escaping Closures with Super ---";
+var c = C();
+var escapedClosure = c.getSuperClosure();
+
+// Even though the closure is executed out here, 
+// `super` must still lexically refer to B, and `this` must be `c`.
+// Should print: I am A and C, wrapped in B
+print escapedClosure();
+
+print "--- Test 4: Modifying state before escaping closure ---";
+c.mutate(); // Mutates `c` using A's mutate method
+// Should print: I am A and C (mutated by A), wrapped in B
+print escapedClosure();
+

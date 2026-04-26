@@ -1,0 +1,10 @@
+class Meh {
+    say() {
+	print "I say in Meh";
+    }
+
+}
+
+class Blah < Meh {}
+
+Blah().say();

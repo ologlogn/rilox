@@ -74,11 +74,38 @@ impl Resolver {
                 self.resolve_expr(condition);
                 self.resolve_statement(body);
             }
-            Statement::ClassStmt(name, methods) => {
-                let enclosing_class = self.current_class.clone();
-                self.current_class = ClassType::CLASS;
+            Statement::ClassStmt(name, methods, super_class) => {
                 self.declare(name);
                 self.define(name);
+                if let Some(super_class) = super_class {
+                    if let Expr::Variable(token) = super_class {
+                        if name.lexeme == token.lexeme {
+                            eprintln!(
+                                "A Class can't inherit itself '{}' at line {}",
+                                name.lexeme, name.line
+                            );
+                            self.had_error = true;
+                            return;
+                        } else {
+                            self.resolve_expr(super_class);
+                            self.begin_scope();
+                            self.scopes
+                                .last_mut()
+                                .unwrap()
+                                .push(("super".to_string(), true));
+                        }
+                    } else {
+                        eprintln!("Variable needed '{}' at line {}", name.lexeme, name.line);
+                        self.had_error = true;
+                        return;
+                    }
+                }
+                let enclosing_class = self.current_class.clone();
+                self.current_class = if super_class.is_some() {
+                    ClassType::SUBCLASS
+                } else {
+                    ClassType::CLASS
+                };
                 self.begin_scope();
                 self.scopes
                     .last_mut()
@@ -88,6 +115,12 @@ impl Resolver {
                     self.resolve_statement(method);
                 }
                 self.end_scope();
+                // if super class was there end the scope
+                if let Some(super_class) = super_class {
+                    if let Expr::Variable(_) = super_class {
+                        self.end_scope();
+                    }
+                }
                 self.current_class = enclosing_class;
             }
         }
@@ -221,6 +254,21 @@ impl Resolver {
                     return;
                 }
                 self.resolve_local(expr, token);
+            }
+            Expr::Super {
+                keyword,
+                method: _method,
+            } => {
+                if self.current_class == ClassType::NONE {
+                    eprintln!("Can't use 'super' outside of a class");
+                    self.had_error = true;
+                    return;
+                } else if self.current_class != ClassType::SUBCLASS {
+                    eprintln!("Can't use 'super' in a class with no superclass");
+                    self.had_error = true;
+                    return;
+                }
+                self.resolve_local(expr, keyword);
             }
         }
     }

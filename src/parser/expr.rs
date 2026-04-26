@@ -40,5 +40,6 @@ pub enum Expr {
         name: Token,
         value: Box<Expr>,
     },
-    This {token: Token}
+    This {token: Token},
+    Super {keyword: Token, method: Token},
 }

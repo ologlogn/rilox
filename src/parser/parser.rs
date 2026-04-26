@@ -247,6 +247,11 @@ impl Parser {
             })
         } else if self.match_any(&[TokenType::Identifier]) {
             Ok(Expr::Variable(self.previous().clone()))
+        } else if self.match_any(&[TokenType::Super]) {
+            let keyword = self.previous().clone();
+            self.expect(&TokenType::Dot)?;
+            let method = self.expect(&TokenType::Identifier)?.clone();
+            Ok(Expr::Super { keyword, method })
         } else {
             Err(ParseError {
                 message: "Parse error".to_string(),
@@ -392,6 +397,10 @@ impl Parser {
     }
     fn class_declaration(&mut self) -> Result<Statement, ParseError> {
         let name = self.expect(&TokenType::Identifier)?.clone();
+        let mut super_class = None;
+        if self.match_any(&[TokenType::Less]) {
+            super_class = Some(Expr::Variable(self.expect(&TokenType::Identifier)?.clone()));
+        }
         self.match_any(&[TokenType::LeftBrace]);
         let mut methods = Vec::new();
         while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
@@ -405,7 +414,7 @@ impl Parser {
             methods.push(self.function(name, function_type)?);
         }
         self.expect(&TokenType::RightBrace)?;
-        Ok(Statement::ClassStmt(name, methods))
+        Ok(Statement::ClassStmt(name, methods, super_class))
     }
 
     fn function(

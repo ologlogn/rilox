@@ -80,7 +80,22 @@ impl Interpreter {
                 Ok(())
             }
 
-            Statement::ClassStmt(name, methods) => {
+            Statement::ClassStmt(name, methods, super_class) => {
+                let mut sup = None;
+                if let Some(super_class) = super_class {
+                    let class_def = self.eval_expr(super_class);
+                    if let Value::Class(class_def) = class_def {
+                        sup = Some(class_def);
+                    } else {
+                        runtime_error(name.clone(), "Not a class")
+                    }
+                }
+                let mut closure_env = self.env.clone();
+                if let Some(ref superclass_def) = sup {
+                    let mut super_env = Environment::new(Some(self.env.clone()));
+                    super_env.define("super".to_string(), Value::Class(superclass_def.clone()));
+                    closure_env = Rc::new(RefCell::new(super_env));
+                }
                 let mut class_methods = HashMap::new();
                 for method in methods {
                     if let Statement::FunctionStmt(method_name, params, body, function_type) =
@@ -89,14 +104,14 @@ impl Interpreter {
                         let function = LoxFunction {
                             params: params.clone(),
                             body: body.clone(),
-                            closure: self.env.clone(),
+                            closure: closure_env.clone(),
                             function_type: function_type.clone(),
                         };
-                        class_methods
-                            .insert(method_name.lexeme.clone(), Rc::new(RefCell::new(function)));
+                        class_methods.insert(method_name.lexeme.clone(), Rc::new(function));
                     }
                 }
-                let class = LoxClass::new(name.lexeme.clone(), class_methods);
+
+                let class = LoxClass::new(name.lexeme.clone(), class_methods, sup);
                 self.env
                     .borrow_mut()
                     .define(name.lexeme.clone(), Value::Class(Rc::new(class)));
@@ -324,6 +339,49 @@ impl Interpreter {
                 }
             }
             Expr::This { token } => self.lookup(&token.lexeme, expr),
+            Expr::Super { keyword, method } => {
+                // EVALUATING: `super.method`
+                // We need TWO pieces of context to evaluate a super call:
+                // 1. The superclass itself (to find the actual method definition).
+                // 2. The current instance "this" (to bind to the method so it executes on this object).
+                //
+                // Environment Layout:
+                // When class methods are created, we wrap them in an environment containing "super".
+                // When a method is called, we wrap it again in an environment containing "this".
+                // Therefore, if the resolver says "super" is at `distance`, we know "this" is
+                // exactly one level closer at `distance - 1`. Because both are pushed to local
+                // scopes, they sit safely at index 0 of their respective environment's values vector.
+                let key = expr as *const Expr;
+                let distance = if let Some(&(dist, _idx)) = self.locals.get(&key) {
+                    dist
+                } else {
+                    runtime_error(keyword.clone(), "Super expression not resolved.");
+                    return Value::Nil;
+                };
+                let superclass_val = Environment::get_at(self.env.clone(), distance, 0);
+                let superclass = if let Value::Class(c) = superclass_val {
+                    c
+                } else {
+                    runtime_error(keyword.clone(), "Superclass must be a class.");
+                    return Value::Nil;
+                };
+                let object_val = Environment::get_at(self.env.clone(), distance - 1, 0);
+                let instance = if let Value::Instance(inst) = object_val {
+                    inst
+                } else {
+                    runtime_error(keyword.clone(), "Failed to extract 'this' instance.");
+                    return Value::Nil;
+                };
+                if let Some(method_func) = superclass.find_method(method.lexeme.clone()) {
+                    method_func.bind(instance)
+                } else {
+                    runtime_error(
+                        method.clone(),
+                        &format!("Undefined property '{}'.", method.lexeme),
+                    );
+                    Value::Nil
+                }
+            }
         }
     }
 

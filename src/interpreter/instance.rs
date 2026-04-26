@@ -19,7 +19,7 @@ impl LoxInstance {
             return instance_rc.borrow().fields[key].clone();
         }
         if let Some(method) = instance_rc.borrow().class.find_method(name.lexeme.clone()) {
-            return method.borrow().bind(instance_rc.clone());
+            return method.bind(instance_rc.clone());
         }
         runtime_error(name.clone(), "Undefined property");
         Value::Nil
