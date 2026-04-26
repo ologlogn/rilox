@@ -12,6 +12,9 @@ use std::rc::Rc;
 pub trait LoxCallable: Debug {
     fn arity(&self) -> usize;
     fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Error>;
+    fn is_variadic(&self) -> bool {
+        false
+    }
 }
 
 #[derive(Clone)]

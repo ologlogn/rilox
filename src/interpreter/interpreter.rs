@@ -5,9 +5,11 @@ use crate::interpreter::function::{LoxCallable, LoxFunction};
 use crate::interpreter::instance::LoxInstance;
 use crate::interpreter::value::{Value, is_equal, is_truthy};
 use crate::lexer::token::{Literal, TokenType};
+use crate::native::array::{ArrayFn, ArrayMethod};
 use crate::native::clock::ClockFn;
 use crate::native::convert::ToNumberFn;
 use crate::native::io::ReadLineFn;
+use crate::native::math::MathFloorFn;
 use crate::parser::expr::Expr;
 use crate::parser::stmt::Statement;
 use std::cell::RefCell;
@@ -286,30 +288,47 @@ impl Interpreter {
             }
             Expr::Call {
                 callee,
-                token,
                 args,
             } => {
+                let callee_token = match &**callee {
+                    Expr::Variable(name_token) => {
+                        Some(name_token)
+                    }
+                    Expr::Get { object: _, name: method_token } => {
+                        Some(method_token)
+                    }
+                    _ => {
+                     None
+                    }
+                }.unwrap();
                 let callee_val = self.eval_expr(callee);
                 let args: Vec<Value> = args.iter().map(|arg| self.eval_expr(arg)).collect();
 
                 match callee_val {
                     Value::Callable(func) => {
                         let func = func.clone();
-                        if args.len() != func.arity() {
-                            runtime_error(token.clone(), "Wrong number of arguments");
+                        if !func.is_variadic() && args.len() != func.arity() {
+                            runtime_error(callee_token.clone(), "Wrong number of arguments");
                             return Value::Nil;
                         }
-                        func.call(self, args).unwrap_or(Value::Nil)
+                        let ret_val = func.call(self, args);
+                        match ret_val {
+                            Ok(ret_val) => ret_val,
+                            Err(e) => {
+                                runtime_error(callee_token.clone(), e.to_string().as_str());
+                                Value::Nil
+                            }
+                        }
                     }
                     Value::Class(class) => {
                         if args.len() != class.arity() {
-                            runtime_error(token.clone(), "Wrong number of arguments");
+                            runtime_error(callee_token.clone(), "Wrong number of arguments");
                             return Value::Nil;
                         }
                         class.call(self, args).unwrap_or(Value::Nil)
                     }
                     _ => {
-                        runtime_error(token.clone(), "Not a function");
+                        runtime_error(callee_token.clone(), "Not a function");
                         Value::Nil
                     }
                 }
@@ -318,6 +337,16 @@ impl Interpreter {
                 let ob = self.eval_expr(object);
                 if let Value::Instance(instance) = ob {
                     LoxInstance::get(&instance, name)
+                } else if let Value::Array(arr) = ob {
+                    if ["push", "pop", "len", "get", "set"].contains(&&*name.lexeme) {
+                        return Value::Callable(Rc::new(ArrayMethod {
+                            method_name: name.lexeme.to_string(),
+                            array: arr,
+                        }));
+                    } else {
+                        runtime_error(name.clone(), "not a function");
+                        Value::Nil
+                    }
                 } else {
                     runtime_error(name.clone(), "Not a instance");
                     Value::Nil
@@ -418,5 +447,7 @@ impl Interpreter {
             "to_number".to_string(),
             Value::Callable(Rc::new(ToNumberFn)),
         );
+        globals.define("array".to_string(), Value::Callable(Rc::new(ArrayFn)));
+        globals.define("floor".to_string(), Value::Callable(Rc::new(MathFloorFn)))
     }
 }

@@ -1,0 +1,47 @@
+// Function to sort an array in place
+fun sort(arr) {
+    var n = arr.len();
+    
+    // Outer loop for passes
+    for (var i = 0; i < n - 1; i = i + 1) {
+        
+        // Inner loop for comparing adjacent elements
+        for (var j = 0; j < n - i - 1; j = j + 1) {
+            
+            var current = arr.get(j);
+            var next = arr.get(j + 1);
+            
+            // If the current element is greater than the next, swap them
+            if (current > next) {
+                arr.set(j, next);
+                arr.set(j + 1, current);
+            }
+        }
+    }
+}
+
+// 1. Create the array using your global constructor
+var arr = array();
+
+// 2. Populate the array with some unsorted numbers using "push"
+arr.push(42);
+arr.push(15);
+arr.push(8);
+arr.push(100);
+arr.push(4);
+arr.push(23);
+
+// 3. Print original array
+print "--- Before Sorting ---";
+for (var i = 0; i < arr.len(); i = i + 1) {
+    print arr.get(i);
+}
+
+// 4. Sort it
+sort(arr);
+
+// 5. Print sorted array
+print "--- After Sorting ---";
+for (var i = 0; i < arr.len(); i = i + 1) {
+    print arr.get(i);
+}
