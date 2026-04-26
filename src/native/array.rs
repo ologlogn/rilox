@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::interpreter::function::{LoxCallable };
+use crate::interpreter::function::LoxCallable;
 use crate::interpreter::interpreter::Interpreter;
 use crate::interpreter::value::Value;
 use std::cell::RefCell;
@@ -40,7 +40,7 @@ impl Debug for ArrayMethod {
         write!(f, "{}()", self.method_name)
     }
 }
-fn get_index (value: Value) -> Result<usize, Error> {
+fn get_index(value: Value) -> Result<usize, Error> {
     match value {
         Value::Number(num) => {
             if num.fract() != 0.0 || num < 0.0 {
@@ -50,11 +50,9 @@ fn get_index (value: Value) -> Result<usize, Error> {
             }
             Ok(num as usize)
         }
-        _ => {
-            Err(Error::RuntimeError(
-                "Array index must be a number.".to_string(),
-            ))
-        }
+        _ => Err(Error::RuntimeError(
+            "Array index must be a number.".to_string(),
+        )),
     }
 }
 
@@ -69,8 +67,6 @@ impl LoxCallable for ArrayMethod {
             _ => 0,
         }
     }
-
-
 
     fn call(&self, _interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, Error> {
         let mut arr = self.array.borrow_mut();

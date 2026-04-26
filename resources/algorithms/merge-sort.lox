@@ -1,0 +1,90 @@
+fun merge(arr, left, mid, right) {
+    var n1 = mid - left + 1;
+    var n2 = right - mid;
+
+    // Create temp arrays
+    var L = array();
+    var R = array();
+
+    // Copy data to temp arrays L and R
+    for (var i = 0; i < n1; i = i + 1) {
+        L.push(arr.get(left + i));
+    }
+    for (var j = 0; j < n2; j = j + 1) {
+        R.push(arr.get(mid + 1 + j));
+    }
+
+    // Merge the temp arrays back into arr
+    var i = 0;
+    var j = 0;
+    var k = left;
+
+    while (i < n1 and j < n2) {
+        if (L.get(i) <= R.get(j)) {
+            arr.set(k, L.get(i));
+            i = i + 1;
+        } else {
+            arr.set(k, R.get(j));
+            j = j + 1;
+        }
+        k = k + 1;
+    }
+
+    // Copy the remaining elements of L, if any
+    while (i < n1) {
+        arr.set(k, L.get(i));
+        i = i + 1;
+        k = k + 1;
+    }
+
+    // Copy the remaining elements of R, if any
+    while (j < n2) {
+        arr.set(k, R.get(j));
+        j = j + 1;
+        k = k + 1;
+    }
+}
+
+// Main function that sorts arr[left..right] using merge()
+fun mergeSort(arr, left, right) {
+    if (left < right) {
+        var sum = left + right;
+        var mid = floor(sum / 2); 
+        // Sort first and second halves
+        mergeSort(arr, left, mid);
+        mergeSort(arr, mid + 1, right);
+        // Merge the sorted halves
+        merge(arr, left, mid, right);
+    }
+}
+
+// Function to start the sort easily
+fun sort(arr) {
+    if (arr.len() > 1) {
+        mergeSort(arr, 0, arr.len() - 1);
+    }
+}
+
+// --- Testing the Implementation ---
+
+var arr = array();
+arr.push(38);
+arr.push(27);
+arr.push(43);
+arr.push(10);
+arr.push(3);
+arr.push(9);
+arr.push(82);
+
+print "--- Before Sorting ---";
+for (var i = 0; i < arr.len(); i = i + 1) {
+    print arr.get(i);
+}
+
+sort(arr);
+
+print "--- After Sorting ---";
+for (var i = 0; i < arr.len(); i = i + 1) {
+    print arr.get(i);
+}
+

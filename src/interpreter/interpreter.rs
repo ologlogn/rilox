@@ -9,6 +9,7 @@ use crate::native::array::{ArrayFn, ArrayMethod};
 use crate::native::clock::ClockFn;
 use crate::native::convert::ToNumberFn;
 use crate::native::io::ReadLineFn;
+use crate::native::math::MathFloorFn;
 use crate::parser::expr::Expr;
 use crate::parser::stmt::Statement;
 use std::cell::RefCell;
@@ -320,7 +321,7 @@ impl Interpreter {
                 if let Value::Instance(instance) = ob {
                     LoxInstance::get(&instance, name)
                 } else if let Value::Array(arr) = ob {
-                    if ["push", "pop", "len","get","set"].contains(&&*name.lexeme) {
+                    if ["push", "pop", "len", "get", "set"].contains(&&*name.lexeme) {
                         return Value::Callable(Rc::new(ArrayMethod {
                             method_name: name.lexeme.to_string(),
                             array: arr,
@@ -429,9 +430,7 @@ impl Interpreter {
             "to_number".to_string(),
             Value::Callable(Rc::new(ToNumberFn)),
         );
-        globals.define(
-            "array".to_string(),
-            Value::Callable(Rc::new(ArrayFn)), // Assuming ArrayFn has no state
-        );
+        globals.define("array".to_string(), Value::Callable(Rc::new(ArrayFn)));
+        globals.define("floor".to_string(), Value::Callable(Rc::new(MathFloorFn)))
     }
 }
