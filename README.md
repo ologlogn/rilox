@@ -30,7 +30,7 @@ A Rust implementation of the [Lox](https://craftinginterpreters.com/) programmin
 # REPL
 cargo run
 
-# Run a script
+# Run a script with release flag for optimised build
 cargo run --release path/to/script.lox
 ```
 
